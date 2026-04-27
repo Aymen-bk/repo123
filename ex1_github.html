@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TP 9 Ex1 : GitHub User Finder</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Segoe UI", Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 40px 20px;
+      color: #333;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 12px;
+      padding: 32px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    }
+
+    h1 {
+      color: #003366;
+      margin-bottom: 24px;
+      text-align: center;
+      font-size: 1.8rem;
+    }
+
+    .search-box {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 24px;
+    }
+
+    #username-input {
+      flex: 1;
+      padding: 12px 16px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 1rem;
+      transition: border-color 0.2s;
+    }
+
+    #username-input:focus {
+      outline: none;
+      border-color: #003366;
+    }
+
+    #search-btn {
+      padding: 12px 24px;
+      background: #003366;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    #search-btn:hover { background: #00509e; }
+    #search-btn:active { transform: translateY(1px); }
+
+    #result {
+      min-height: 100px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .loading {
+      color: #666;
+      font-style: italic;
+      padding: 20px;
+    }
+
+    .error {
+      color: #b22222;
+      background: #ffe6e6;
+      padding: 16px;
+      border-radius: 8px;
+      border-left: 4px solid #b22222;
+      width: 100%;
+      text-align: center;
+    }
+
+    .user-card {
+      text-align: center;
+      padding: 20px;
+      background: #f9fafb;
+      border-radius: 8px;
+      width: 100%;
+    }
+
+    .user-card img {
+      border-radius: 50%;
+      border: 4px solid #003366;
+      margin-bottom: 16px;
+    }
+
+    .user-card h3 {
+      color: #003366;
+      margin-bottom: 8px;
+      font-size: 1.4rem;
+    }
+
+    .user-card p { margin-bottom: 12px; color: #555; }
+
+    .user-card a {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 8px 20px;
+      background: #003366;
+      color: #fff;
+      text-decoration: none;
+      border-radius: 6px;
+      transition: background 0.2s;
+    }
+
+    .user-card a:hover { background: #00509e; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔍 GitHub User Finder</h1>
+
+    <div class="search-box">
+      <input
+        type="text"
+        id="username-input"
+        placeholder="Entrez un nom d'utilisateur GitHub..."
+        autofocus
+      >
+      <button id="search-btn">Rechercher</button>
+    </div>
+
+    <div id="result">
+      <p class="loading">Entrez un nom d'utilisateur pour commencer...</p>
+    </div>
+  </div>
+
+  <script>
+    /* TP 9 Exercice 1 : GitHub User Finder
+
+      OBJECTIFS :
+         1. Créer une fonction asynchrone searchGitHubUser(username) qui :
+            - affiche un message de chargement (Recherche en cours...)
+            - effectue un fetch vers https://api.github.com/users/{username}
+            - gère les erreurs réseau (try / catch)
+            - gère le cas 404 (utilisateur non trouvé)
+            - gère les autres erreurs HTTP (Erreur API GitHub)
+            - affiche : avatar, nom, bio, nombre de dépôts publics, lien de profil
+
+         2. Recherche au clic
+
+         3. Recherche aussi avec la touche Entrée
+
+
+       Les classes CSS utiles (déjà stylées) :
+         - .loading   : message d'attente
+         - .error     : message d'erreur
+         - .user-card : carte d'affichage de l'utilisateur
+
+       Structure HTML attendue dans #result en cas de succès :
+         <div class="user-card">
+           <img src="..." alt="..." width="120">
+           <h3>Nom</h3>
+           <p>Bio</p>
+           <p>Dépôts publics : <strong>...</strong></p>
+           <a href="..." target="_blank">Voir le profil</a>
+         </div>
+     */
+
+    // Q1 : écrire ici la fonction asynchrone searchGitHubUser(username)
+
+
+    // Q2 : Recherche au clic
+
+
+    // Q3 : Recherche aussi avec la touche Entrée
+
+
+  </script>
+</body>
+</html>

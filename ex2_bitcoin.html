@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TP 9 Ex 2 : Dashboard Bitcoin</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Segoe UI", Roboto, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      min-height: 100vh;
+      padding: 40px 20px;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .dashboard {
+      max-width: 500px;
+      width: 100%;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      padding: 40px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+      text-align: center;
+    }
+
+    .logo {
+      font-size: 4rem;
+      margin-bottom: 8px;
+      filter: drop-shadow(0 0 12px rgba(247, 147, 26, 0.6));
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      margin-bottom: 32px;
+      color: #f7931a;
+      font-weight: 600;
+      letter-spacing: 1px;
+    }
+
+    .price-container {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 12px;
+      padding: 32px;
+      margin-bottom: 24px;
+      border: 1px solid rgba(247, 147, 26, 0.3);
+    }
+
+    .label {
+      font-size: 0.9rem;
+      color: #aaa;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 12px;
+    }
+
+    #price {
+      font-size: 3rem;
+      font-weight: 700;
+      color: #f7931a;
+      font-family: "Courier New", monospace;
+      text-shadow: 0 0 20px rgba(247, 147, 26, 0.4);
+    }
+
+    #status {
+      margin-top: 16px;
+      font-size: 0.9rem;
+      color: #88cc88;
+      min-height: 20px;
+    }
+
+    #status.error   { color: #ff6b6b; }
+    #status.loading { color: #ffd93d; }
+
+    #refresh-btn {
+      padding: 14px 32px;
+      background: linear-gradient(135deg, #f7931a, #ff6b00);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      letter-spacing: 0.5px;
+      box-shadow: 0 4px 12px rgba(247, 147, 26, 0.3);
+    }
+
+    #refresh-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(247, 147, 26, 0.5);
+    }
+
+    .info {
+      margin-top: 24px;
+      padding-top: 16px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      font-size: 0.8rem;
+      color: #777;
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard">
+    <div class="logo">₿</div>
+    <h1>Bitcoin Dashboard</h1>
+
+    <div class="price-container">
+      <div class="label">Prix actuel (USD)</div>
+      <div id="price">--</div>
+      <div id="status">En attente...</div>
+    </div>
+
+    <button id="refresh-btn"> Actualiser</button>
+
+    <div class="info">
+      Données fournies par CoinGecko API . Auto-refresh : 30s
+    </div>
+  </div>
+
+  <script>
+    /* 
+       TP 9 Exercice 2 : Dashboard Bitcoin avec rafraîchissement auto
+
+       API : https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd
+
+       Réponse JSON attendue :
+         { "bitcoin": { "usd": 79234 } }
+
+       FONCTIONNALITÉS À IMPLÉMENTER :
+         1. Afficher le prix du Bitcoin au chargement de la page
+         2. Rafraîchir automatiquement le prix toutes les 30 secondes
+         3. Bouton "Actualiser" qui force une nouvelle requête
+         4. Si une requête est déjà en cours quand on en lance une nouvelle
+            (par clic OU par auto-refresh), l'ANCIENNE doit être annulée
+         5. Afficher un état de chargement et gérer les erreurs
+
+       ÉLÉMENTS DU DOM :
+         - #price       : zone d'affichage du prix
+         - #status      : zone de statut (loading / erreur / OK)
+         - #refresh-btn : bouton "Actualiser"
+    ===================================================================== */
+
+    const API_URL = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd";
+    const REFRESH_INTERVAL_MS = 30000;
+    let countdown = 30;
+    let countdownTimer = null;
+    let currentController = null;   // AbortController de la requête en cours
+
+    // Q1 : fonction asynchrone fetchBitcoinPrice() 
+
+
+    /* Q2 : Écris une fonction startCountdown() qui utilise setInterval
+       pour décrémenter une variable countdown chaque seconde.
+       Si elle passe en dessous de 0, elle repart de 30. 
+       Affiche la valeur dans l'élément #countdown.
+    */
+
+
+
+    // Q3 : Brancher l'événement "click" sur btn
+
+
+    // Q4 : Initialisation
+
+  </script>
+</body>
+</html>
