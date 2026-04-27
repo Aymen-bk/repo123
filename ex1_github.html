@@ -177,12 +177,56 @@
      */
 
     // Q1 : écrire ici la fonction asynchrone searchGitHubUser(username)
+    const API_URL = "https://api.github.com/users/";
+    const input = document.getElementById("username-input");
+    const searchBtn = document.getElementById("search-btn");
+    const resultDiv = document.getElementById("result");
+    
+    async function searchGitHubUser(username) {
+      if (!username.trim()) {
+        resultDiv.innerHTML = '<p class="loading">Entrez un nom d\'utilisateur...</p>';
+        return;
+      }
 
+      resultDiv.innerHTML = '<p class="loading">Recherche en cours...</p>';
+
+      try {
+        const response = await fetch(API_URL + encodeURIComponent(username));
+
+        if (!response.ok) {
+          if (response.status === 404) {
+            resultDiv.innerHTML = '<p class="error">Utilisateur non trouve</p>';
+          } else {
+            resultDiv.innerHTML = '<p class="error">Erreur API GitHub</p>';
+          }
+          return;
+        }
+
+        const user = await response.json();
+
+        const bio = user.bio ? user.bio : "Pas de bio";
+        const repos = user.public_repos;
+
+        resultDiv.innerHTML = `
+          <div class="user-card">
+            <img src="${user.avatar_url}" alt="${user.login}" width="120">
+            <h3>${user.name ? user.name : user.login}</h3>
+            <p>${bio}</p>
+            <p>Depots publics : <strong>${repos}</strong></p>
+            <a href="${user.html_url}" target="_blank">Voir le profil</a>
+          </div>
+        `;
+      } catch (error) {resultDiv.innerHTML = '<p class="error">Erreur reseau</p>';}
+    }
 
     // Q2 : Recherche au clic
-
+    searchBtn.addEventListener("click", function() {searchGitHubUser(input.value); });
 
     // Q3 : Recherche aussi avec la touche Entrée
+    input.addEventListener("keydown", function(event) 
+      {
+      if (event.key === "Enter") {searchGitHubUser(input.value);}
+    });
 
 
   </script>
