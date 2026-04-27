@@ -152,21 +152,82 @@
     let countdownTimer = null;
     let currentController = null;   // AbortController de la requête en cours
 
-    // Q1 : fonction asynchrone fetchBitcoinPrice() 
+    // Q1 : fonction asynchrone fetchBitcoinPrice()
+    async function fetchBitcoinPrice() {
+      if (currentController) {
+        currentController.abort();
+      }
 
+      currentController = new AbortController();
+      const signal = currentController.signal;
 
-    /* Q2 : Écris une fonction startCountdown() qui utilise setInterval
-       pour décrémenter une variable countdown chaque seconde.
-       Si elle passe en dessous de 0, elle repart de 30. 
-       Affiche la valeur dans l'élément #countdown.
+      const statusDiv = document.getElementById("status");
+      const priceDiv = document.getElementById("price");
+
+      statusDiv.textContent = "Chargement...";
+      statusDiv.className = "loading";
+
+      try {
+        const response = await fetch(API_URL, { signal });
+
+        if (!response.ok) {
+          throw new Error("HTTP " + response.status);
+        }
+
+        const data = await response.json();
+        const priceUSD = data.bitcoin.usd;
+        priceDiv.textContent = "$ " + priceUSD.toLocaleString();
+        statusDiv.textContent = "Derniere mise a jour";
+        statusDiv.className = "";
+      } catch (error) {
+        if (error.name === "AbortError") {
+          return;
+        }
+        priceDiv.textContent = "--";
+        statusDiv.textContent = "Erreur de chargement";
+        statusDiv.className = "error";
+      } finally {
+        currentController = null;
+      }
+    }
+
+    /* Q2 : Ecris une fonction startCountdown() qui utilise setInterval
+       pour decrementer une variable countdown chaque seconde.
+       Si elle passe en dessous de 0, elle repart de 30.
+       Affiche la valeur dans l'element #countdown.
     */
+    function startCountdown() {
+      if (countdownTimer) {
+        clearInterval(countdownTimer);
+      }
 
+      const countdownSpan = document.getElementById("countdown");
+      countdown = 30;
+      countdownSpan.textContent = countdown;
 
+      countdownTimer = setInterval(function() {
+        countdown--;
+        countdownSpan.textContent = countdown;
 
-    // Q3 : Brancher l'événement "click" sur btn
+        if (countdown <= 0) {
+          fetchBitcoinPrice();
+          countdown = 30;
+          countdownSpan.textContent = countdown;
+        }
+      }, 1000);
+    }
 
+    // Q3 : Brancher l'evenement "click" sur btn
+    const refreshBtn = document.getElementById("refresh-btn");
+    refreshBtn.addEventListener("click", function() {
+      fetchBitcoinPrice();
+      countdown = 30;
+      document.getElementById("countdown").textContent = countdown;
+    });
 
     // Q4 : Initialisation
+    fetchBitcoinPrice();
+    startCountdown();
 
   </script>
 </body>
