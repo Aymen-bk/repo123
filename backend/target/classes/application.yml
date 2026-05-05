@@ -1,0 +1,29 @@
+server:
+  port: 8081
+
+app:
+  jwt:
+    # For demo only. Override in env: APP_JWT_SECRET
+    secret: ${APP_JWT_SECRET:dev-secret-change-me-dev-secret-change-me}
+    issuer: humankind360
+    expiresMinutes: 240
+  cors:
+    allowedOrigins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:4200,http://localhost:4300}
+
+elasticsearch:
+  baseUrl: ${ES_BASE_URL:http://localhost:9200}
+  index: companies
+
+otp:
+    expiryMillis: 300000
+
+spring:
+  mail:
+    host: smtp.example.com
+    port: 587
+    username: your-username
+    password: your-password
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+

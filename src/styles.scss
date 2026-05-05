@@ -1,0 +1,54 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap');
+
+@layer base {
+  * { box-sizing: border-box; }
+
+  html, body {
+    height: 100%;
+    background-color: #0A1628;
+    color: #E2E8F0;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: #0A1628; }
+  ::-webkit-scrollbar-thumb { background: #1E2D4A; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #2d4270; }
+}
+
+@layer components {
+  .hk-card {
+    @apply bg-card border border-border rounded-xl;
+  }
+  .hk-input {
+    @apply bg-white/5 border border-border rounded-xl text-slate-200 font-dm text-sm px-3 py-2.5 outline-none transition-colors focus:border-esg-blue-l placeholder:text-muted;
+  }
+  .hk-btn-primary {
+    @apply bg-esg-blue hover:bg-esg-blue-l text-white font-dm font-semibold text-sm px-4 py-2.5 rounded-lg transition-all hover:-translate-y-px active:scale-95 border-none cursor-pointer;
+  }
+  .hk-btn-ghost {
+    @apply bg-white/5 hover:bg-white/10 text-slate-300 font-dm font-medium text-sm px-3.5 py-2 rounded-lg border border-border transition-all cursor-pointer;
+  }
+  .accordion-body {
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .accordion-body.open {
+    max-height: 2000px;
+  }
+}
+
+@layer utilities {
+  .font-syne { font-family: 'DM Sans', sans-serif; font-weight: 700; }
+  .font-dm   { font-family: 'DM Sans', sans-serif; }
+  .font-mono { font-family: 'JetBrains Mono', monospace; }
+  .text-navy  { color: #0A1628; }
+  .bg-navy    { background-color: #0A1628; }
+  .border-border { border-color: #1E2D4A; }
+  .text-muted { color: #7B91B0; }
+}
