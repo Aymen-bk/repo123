@@ -64,6 +64,7 @@ export class NavComponent {
     { path: '/search',   icon: '', label: 'Search'   },
     { path: '/import',   icon: '', label: 'Import'   },
     { path: '/compare',  icon: '', label: 'Compare'  },
+    { path: '/insights', icon: '', label: 'Insights' },
   ];
 
   initials = computed(() => {

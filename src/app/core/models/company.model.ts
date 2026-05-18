@@ -1,3 +1,8 @@
+export interface TrendPoint {
+  date: string;          // e.g. '2025-Q1'
+  global_score: number;
+}
+
 export interface Level3Metric {
   metric_name: string;
   score: number | null;
@@ -42,6 +47,7 @@ export interface Company {
   is_current: boolean;
   timestamp: string;
   humankind_response: HumankindResponse;
+  score_history?: TrendPoint[];
 }
 
 export interface SearchFilters {

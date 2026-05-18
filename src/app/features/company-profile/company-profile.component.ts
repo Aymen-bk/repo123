@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, signal, AfterViewInit, ElementRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
@@ -7,6 +7,8 @@ import { ScoreBadgeComponent } from '../../shared/components/score-badge/score-b
 import { ScoreBarComponent } from '../../shared/components/score-bar/score-bar.component';
 import { Company, CategoryDetail, Level2Metric } from '../../core/models/company.model';
 import { CompanyApiService } from '../../core/services/company-api.service';
+
+declare const Chart: any;
 
 @Component({
   selector: 'app-company-profile',
@@ -48,11 +50,25 @@ import { CompanyApiService } from '../../core/services/company-api.service';
               [ngClass]="compareBtnClass()">
               {{ isSelected ? 'In Compare' : 'Add to Compare' }}
             </button>
+            <button (click)="exportPdf()" class="hk-btn-ghost text-xs flex items-center gap-1.5">
+              Export PDF
+            </button>
+            <button (click)="exportExcel()" class="hk-btn-ghost text-xs flex items-center gap-1.5">
+              Export Excel
+            </button>
           </div>
         </div>
       </div>
 
       <div class="grid grid-cols-[1fr_320px] gap-5 mb-5 lg:grid-cols-1">
+
+        <div class="bg-card border border-border rounded-xl p-5">
+          <h3 class="font-syne text-sm font-bold mb-4 text-slate-300 uppercase tracking-wider">ESG Category Overview</h3>
+          <div class="relative h-[260px] flex items-center justify-center">
+            <canvas #radarCanvas></canvas>
+          </div>
+        </div>
+
         <div class="flex flex-col gap-3">
           <div *ngFor="let cat of company.humankind_response.category_details"
                class="rounded-xl border p-4 transition-all"
@@ -140,6 +156,10 @@ import { CompanyApiService } from '../../core/services/company-api.service';
         </div>
       </div>
 
+      <div *ngIf="toastMsg()"
+           class="fixed bottom-6 right-6 z-50 bg-card2 border border-border rounded-xl px-4 py-3 text-sm shadow-2xl flex items-center gap-2 animate-fade-up">
+        {{ toastMsg() }}
+      </div>
     </div>
 
     <div *ngIf="!company" class="p-7 text-center text-muted">
@@ -149,7 +169,8 @@ import { CompanyApiService } from '../../core/services/company-api.service';
     </div>
   `,
 })
-export class CompanyProfileComponent implements OnInit {
+export class CompanyProfileComponent implements OnInit, AfterViewInit {
+  @ViewChild('radarCanvas') radarCanvas!: ElementRef<HTMLCanvasElement>;
 
   private route    = inject(ActivatedRoute);
   private api      = inject(CompanyApiService);
@@ -159,9 +180,15 @@ export class CompanyProfileComponent implements OnInit {
   openCats = new Set<string>();
   openL2   = new Set<string>();
   isSelected = false;
+  toastMsg   = signal('');
+  private radarChart: any;
 
   ngOnInit(): void {
     void this.load();
+  }
+
+  ngAfterViewInit(): void {
+    setTimeout(() => this.buildRadar(), 100);
   }
 
   private async load(): Promise<void> {
@@ -169,9 +196,45 @@ export class CompanyProfileComponent implements OnInit {
     try {
       this.company = await firstValueFrom(this.api.getCompany(id));
       this.isSelected = this.compare.isSelected(this.company.company_id);
+      setTimeout(() => this.buildRadar(), 50);
     } catch {
       this.company = undefined;
     }
+  }
+
+  buildRadar(): void {
+    if (typeof Chart === 'undefined' || !this.company) return;
+    const cats  = this.company.humankind_response.category_details;
+    const ctx   = this.radarCanvas.nativeElement.getContext('2d')!;
+    this.radarChart = new Chart(ctx, {
+      type: 'radar',
+      data: {
+        labels: cats.map(c => c.category),
+        datasets: [{
+          label: this.company.company_name,
+          data: cats.map(c => c.average_score),
+          borderColor: '#3B72F6',
+          backgroundColor: 'rgba(59,114,246,0.12)',
+          pointBackgroundColor: '#3B72F6',
+          pointRadius: 5,
+          borderWidth: 2,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          r: {
+            min: 0, max: 100,
+            ticks: { stepSize: 25, color: '#7B91B0', font: { size: 10, family: 'JetBrains Mono' }, backdropColor: 'transparent' },
+            grid:       { color: 'rgba(255,255,255,0.06)' },
+            pointLabels:{ color: '#E2E8F0', font: { size: 13, family: 'Syne', weight: '700' } },
+            angleLines:  { color: 'rgba(255,255,255,0.06)' },
+          },
+        },
+        plugins: { legend: { display: false } },
+      },
+    });
   }
 
   toggleCat(name: string): void {
@@ -196,6 +259,35 @@ export class CompanyProfileComponent implements OnInit {
     };
   }
 
+  exportPdf(): void {
+    window.print();
+    this.showToast('PDF export initiated (use browser print dialog)');
+  }
+
+  exportExcel(): void {
+    if (!this.company) return;
+    const rows = ['Category,L2 Metric,L3 Metric,Score,Explanation'];
+    for (const cat of this.company.humankind_response.category_details) {
+      for (const m2 of cat.level_2_metrics) {
+        for (const m3 of m2.level_3_metrics) {
+          const expl = m3.user_friendly_explanation?.[0]?.replace(/,/g, ';') ?? '';
+          rows.push(`${cat.category},"${m2.metric_name}","${m3.metric_name}",${m3.score ?? 'N/A'},"${expl}"`);
+        }
+      }
+    }
+    const blob = new Blob([rows.join('\n')], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `${this.company.company_ticker}_ESG_Report.csv`;
+    a.click();
+    this.showToast('Excel (CSV) exported successfully');
+  }
+
+  private showToast(msg: string): void {
+    this.toastMsg.set(msg);
+    setTimeout(() => this.toastMsg.set(''), 3000);
+  }
+
   scoreColor(s: number): string {
     if (s >= 80) return 'text-esg-planet';
     if (s >= 50) return 'text-esg-people';
@@ -211,7 +303,7 @@ export class CompanyProfileComponent implements OnInit {
   }
 
   flagEmoji(iso: string): string {
-    const flags: Record<string, string> = { US: 'US', IT: 'IT', GB: 'GB', DE: 'DE', FR: 'FR', JP: 'JP' };
+    const flags: Record<string, string> = { US: '🇺🇸', IT: '🇮🇹', GB: '🇬🇧', DE: '🇩🇪', FR: '🇫🇷', JP: '🇯🇵' };
     return flags[iso] || '';
   }
 }

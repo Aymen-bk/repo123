@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { ScoreBadgeComponent } from '../../shared/components/score-badge/score-badge.component';
-import { CompanyApiService } from '../../core/services/company-api.service';
+import { CompanyApiService, CompanyTrend } from '../../core/services/company-api.service';
 import { Company } from '../../core/models/company.model';
 
 declare const Chart: any;
@@ -16,7 +16,7 @@ declare const Chart: any;
     <div class="p-7 max-w-[1200px] mx-auto animate-fade-up">
       <div class="mb-7">
         <h1 class="font-syne text-2xl font-extrabold mb-1">Insights & Trends</h1>
-        <p class="text-muted text-sm">Sector benchmarks, score distribution, and top performers</p>
+        <p class="text-muted text-sm">Sector benchmarks, score distribution, top performers, and score evolution</p>
       </div>
 
       <div class="grid grid-cols-3 gap-4 mb-6 md:grid-cols-1">
@@ -50,6 +50,26 @@ declare const Chart: any;
           </div>
           <div class="h-[200px]"><canvas #sectorCanvas></canvas></div>
         </div>
+      </div>
+
+      <!-- ── Score Evolution over Time (NEW) ─────────────────────────────── -->
+      <div class="bg-card border border-border rounded-xl p-5 mb-5">
+        <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
+          <div>
+            <h3 class="font-syne text-sm font-bold text-slate-200">Score Evolution</h3>
+            <p class="text-muted text-xs mt-0.5">Quarterly Global ESG score trend — toggle companies below</p>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button *ngFor="let c of topPerformers.slice(0,6)" (click)="toggleTrend(c.company_id)"
+              class="px-3 py-1 rounded-lg text-xs font-medium border transition-all cursor-pointer"
+              [style.border-color]="trendSelected.has(c.company_id) ? trendColor(c.company_id) : 'rgba(255,255,255,0.12)'"
+              [style.color]="trendSelected.has(c.company_id) ? trendColor(c.company_id) : '#7B91B0'"
+              [style.background]="trendSelected.has(c.company_id) ? (trendColor(c.company_id) + '20') : 'transparent'">
+              {{ c.company_ticker || c.company_name.slice(0,6) }}
+            </button>
+          </div>
+        </div>
+        <div class="h-[240px]"><canvas #trendCanvas></canvas></div>
       </div>
 
       <div class="grid grid-cols-2 gap-5 md:grid-cols-1">
@@ -120,31 +140,50 @@ declare const Chart: any;
 export class InsightsComponent implements OnInit, AfterViewInit {
   @ViewChild('histCanvas')   histCanvas!:   ElementRef<HTMLCanvasElement>;
   @ViewChild('sectorCanvas') sectorCanvas!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('trendCanvas')  trendCanvas!:  ElementRef<HTMLCanvasElement>;
 
   private api = inject(CompanyApiService);
 
-  allCompanies: Company[] = [];
+  allCompanies:  Company[] = [];
   topPerformers: Company[] = [];
 
   kpiCards: Array<{ icon: string; color: string; value: string; label: string; sub: string }> = [];
 
-  ngOnInit(): void {
-    void this.load();
-  }
+  // Trend chart state
+  private trendColors = ['#3B72F6','#0EA472','#F59E0B','#8B5CF6','#EF4444','#06B6D4'];
+  private trendData   = new Map<string, CompanyTrend>();
+  trendSelected       = new Set<string>();
+  private trendChart: any;
+
+  // ── Lifecycle ─────────────────────────────────────────────────────────────
+
+  ngOnInit(): void { void this.load(); }
 
   private async load(): Promise<void> {
     const items = await firstValueFrom(this.api.searchCompanies({}));
-    const full = await Promise.all(items.slice(0, 50).map(i => firstValueFrom(this.api.getCompany(i.company_id))));
-    this.allCompanies = full;
+    const full  = await Promise.all(items.slice(0, 50).map(i => firstValueFrom(this.api.getCompany(i.company_id))));
+    this.allCompanies  = full;
     this.topPerformers = [...this.allCompanies].sort(
       (a, b) => b.humankind_response.global_score - a.humankind_response.global_score,
     );
 
     this.kpiCards = [
-      { icon: 'P', color: '#0EA472', value: this.avg('Planet').toFixed(1), label: 'Avg Planet Score', sub: 'Across all tracked companies' },
-      { icon: 'Pe', color: '#F59E0B', value: this.avg('People').toFixed(1), label: 'Avg People Score', sub: 'Workforce, H&S, human rights' },
-      { icon: 'G', color: '#8B5CF6', value: this.avg('Governance').toFixed(1), label: 'Avg Governance Score', sub: 'Ethics, data, compliance' },
+      { icon: '🌍', color: '#0EA472', value: this.avg('Planet').toFixed(1),     label: 'Avg Planet Score',     sub: 'Across all tracked companies' },
+      { icon: '👥', color: '#F59E0B', value: this.avg('People').toFixed(1),     label: 'Avg People Score',     sub: 'Workforce, H&S, human rights' },
+      { icon: '⚖️', color: '#8B5CF6', value: this.avg('Governance').toFixed(1), label: 'Avg Governance Score', sub: 'Ethics, data, compliance' },
     ];
+
+    // Load trend data for top 6 companies, preselect top 3
+    if (this.topPerformers.length > 0) {
+      const top6 = this.topPerformers.slice(0, 6);
+      const trends = await firstValueFrom(
+        this.api.getMultiTrends(top6.map(c => c.company_id))
+      );
+      for (const t of trends) this.trendData.set(t.company_id, t);
+      // Preselect top 3
+      top6.slice(0, 3).forEach(c => this.trendSelected.add(c.company_id));
+      setTimeout(() => this.rebuildTrendChart(), 300);
+    }
   }
 
   ngAfterViewInit(): void {
@@ -154,10 +193,69 @@ export class InsightsComponent implements OnInit, AfterViewInit {
     }, 150);
   }
 
+  // ── Trend chart ───────────────────────────────────────────────────────────
+
+  trendColor(id: string): string {
+    const keys = [...this.trendData.keys()];
+    return this.trendColors[keys.indexOf(id) % this.trendColors.length] ?? '#3B72F6';
+  }
+
+  toggleTrend(id: string): void {
+    if (this.trendSelected.has(id)) { this.trendSelected.delete(id); }
+    else                            { this.trendSelected.add(id); }
+    this.rebuildTrendChart();
+  }
+
+  private rebuildTrendChart(): void {
+    if (typeof Chart === 'undefined' || !this.trendCanvas) return;
+    if (this.trendChart) { this.trendChart.destroy(); this.trendChart = null; }
+
+    const selectedEntries = [...this.trendSelected]
+      .map(id => this.trendData.get(id))
+      .filter(Boolean) as CompanyTrend[];
+
+    if (selectedEntries.length === 0) return;
+
+    const labels = selectedEntries[0].history.map(h => h.date);
+    const ctx    = this.trendCanvas.nativeElement.getContext('2d')!;
+
+    this.trendChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: selectedEntries.map(t => ({
+          label: t.company_ticker || t.company_name,
+          data:  t.history.map(h => h.global_score),
+          borderColor:     this.trendColor(t.company_id),
+          backgroundColor: this.trendColor(t.company_id) + '18',
+          borderWidth: 2,
+          pointRadius: 3,
+          pointHoverRadius: 5,
+          tension: 0.35,
+          fill: false,
+        })),
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        scales: {
+          x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#7B91B0', font: { family: 'DM Sans', size: 11 } } },
+          y: { min: 0, max: 100, grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#7B91B0', font: { family: 'JetBrains Mono', size: 10 } } },
+        },
+        plugins: {
+          legend: { labels: { color: '#E2E8F0', font: { family: 'DM Sans', size: 11 }, boxWidth: 12 } },
+          tooltip: { mode: 'index', intersect: false },
+        },
+        interaction: { mode: 'index', intersect: false },
+      },
+    });
+  }
+
+  // ── Static charts ─────────────────────────────────────────────────────────
+
   buildHistogram(): void {
     if (typeof Chart === 'undefined' || !this.histCanvas) return;
     const scores = this.allCompanies.map(c => c.humankind_response.global_score);
-    const bins = ['0-20','20-40','40-60','60-80','80-100'];
+    const bins   = ['0–20','20–40','40–60','60–80','80–100'];
     const counts = [
       scores.filter(s => s < 20).length,
       scores.filter(s => s >= 20 && s < 40).length,
@@ -170,7 +268,10 @@ export class InsightsComponent implements OnInit, AfterViewInit {
       type: 'bar',
       data: {
         labels: bins,
-        datasets: [{ label: 'Companies', data: counts, backgroundColor: ['#EF444460','#F59E0B60','#F59E0B60','#3B72F660','#0EA47260'], borderColor: ['#EF4444','#F59E0B','#F59E0B','#3B72F6','#0EA472'], borderWidth: 1.5, borderRadius: 6 }],
+        datasets: [{ label: 'Companies', data: counts,
+          backgroundColor: ['#EF444460','#F59E0B60','#F59E0B60','#3B72F660','#0EA47260'],
+          borderColor: ['#EF4444','#F59E0B','#F59E0B','#3B72F6','#0EA472'],
+          borderWidth: 1.5, borderRadius: 6 }],
       },
       options: {
         responsive: true, maintainAspectRatio: false,
@@ -190,13 +291,11 @@ export class InsightsComponent implements OnInit, AfterViewInit {
       type: 'bar',
       data: {
         labels: ['Governance', 'People', 'Planet'],
-        datasets: [{
-          label: 'Sector Average',
+        datasets: [{ label: 'Sector Average',
           data: ['Governance','People','Planet'].map(c => parseFloat(this.avg(c).toFixed(1))),
           backgroundColor: ['#8B5CF660','#F59E0B60','#0EA47260'],
           borderColor: ['#8B5CF6','#F59E0B','#0EA472'],
-          borderWidth: 1.5, borderRadius: 8,
-        }],
+          borderWidth: 1.5, borderRadius: 8 }],
       },
       options: {
         responsive: true, maintainAspectRatio: false,
@@ -210,6 +309,8 @@ export class InsightsComponent implements OnInit, AfterViewInit {
     });
   }
 
+  // ── Helpers ───────────────────────────────────────────────────────────────
+
   avg(catName: string): number {
     const scores = this.allCompanies
       .map(c => c.humankind_response.category_details.find(cat => cat.category === catName)?.average_score)
@@ -217,9 +318,7 @@ export class InsightsComponent implements OnInit, AfterViewInit {
     return scores.length ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
   }
 
-  avgCat(cat: string): string {
-    return this.avg(cat).toFixed(1);
-  }
+  avgCat(cat: string): string { return this.avg(cat).toFixed(1); }
 
   getCatScore(c: any, catName: string): number | null {
     return c.humankind_response.category_details.find((cat: any) => cat.category === catName)?.average_score ?? null;
@@ -236,21 +335,14 @@ export class InsightsComponent implements OnInit, AfterViewInit {
   catScoreClass(c: any, cat: string): { [key: string]: boolean } {
     const s = this.getCatScore(c, cat);
     if (s == null) return {};
-    return {
-      'text-esg-planet': s >= 80,
-      'text-esg-people': s >= 50 && s < 80,
-      'text-red-400': s < 50,
-    };
+    return { 'text-esg-planet': s >= 80, 'text-esg-people': s >= 50 && s < 80, 'text-red-400': s < 50 };
   }
 
   rankBadgeClass(index: number): { [key: string]: boolean } {
     return {
-      'bg-amber-400/20': index === 0,
-      'text-amber-400': index === 0,
-      'bg-slate-400/20': index === 1,
-      'text-slate-300': index === 1,
-      'bg-orange-600/20': index === 2,
-      'text-orange-400': index === 2,
+      'bg-amber-400/20': index === 0, 'text-amber-400': index === 0,
+      'bg-slate-400/20': index === 1, 'text-slate-300': index === 1,
+      'bg-orange-600/20': index === 2, 'text-orange-400': index === 2,
     };
   }
 }

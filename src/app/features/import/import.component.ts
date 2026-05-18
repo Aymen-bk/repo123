@@ -26,6 +26,19 @@ import { CompanyApiService } from '../../core/services/company-api.service';
           {{ msg() }}
         </div>
 
+        <div class="flex items-center gap-3 my-2 text-muted text-xs">
+          <div class="flex-1 h-px bg-border"></div> or <div class="flex-1 h-px bg-border"></div>
+        </div>
+
+        <a routerLink="/import/manual"
+           class="flex items-center gap-3 p-4 bg-white/3 border border-dashed border-border rounded-xl hover:bg-white/5 hover:border-white/30 transition-all">
+          <div class="w-9 h-9 rounded-xl bg-esg-blue/20 flex items-center justify-center text-esg-blue-l font-bold text-lg">+</div>
+          <div>
+            <div class="font-syne font-bold text-sm text-slate-200">Manual Entry</div>
+            <div class="text-muted text-xs mt-0.5">Add a single company by filling in its metrics manually</div>
+          </div>
+        </a>
+
         <a routerLink="/search" class="text-esg-blue-l text-sm inline-block">Go to Search →</a>
       </div>
     </div>

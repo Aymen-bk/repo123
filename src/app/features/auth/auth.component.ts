@@ -61,7 +61,7 @@ type AuthStep = 'email' | 'otp' | 'loading';
 
         <div *ngIf="step() === 'otp'">
           <p class="text-slate-300 text-sm mb-1 text-center">Code sent to <span class="text-esg-blue-l font-semibold">{{ email }}</span></p>
-          <p class="text-muted text-xs mb-6 text-center">Enter the 6-digit code (use <span class="font-mono font-bold text-esg-planet">123456</span> for demo)</p>
+          <p class="text-muted text-xs mb-6 text-center">Enter the 6-digit code from your email</p>
 
           <div class="flex gap-2 justify-center mb-6">
             <input *ngFor="let i of [0,1,2,3,4,5]; let idx = index"
@@ -151,8 +151,6 @@ export class AuthComponent {
 
   async googleLogin(): Promise<void> {
     this.step.set('loading');
-    const email = this.email || 'user@gmail.com';
-    await this.authService.loginMockGoogle(email, 'Demo User');
-    this.router.navigate(['/search']);
+    this.authService.loginWithGoogle(); // redirects to /api/auth/google
   }
 }

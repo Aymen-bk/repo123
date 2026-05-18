@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
@@ -6,6 +6,8 @@ import { CompareService } from '../../core/services/compare.service';
 import { ScoreBadgeComponent } from '../../shared/components/score-badge/score-badge.component';
 import { Company } from '../../core/models/company.model';
 import { CompanyApiService, CompanyListItem } from '../../core/services/company-api.service';
+
+declare const Chart: any;
 
 type CompareTab = 'overview' | 'subcriteria' | 'level3';
 
@@ -119,6 +121,10 @@ type CompareTab = 'overview' | 'subcriteria' | 'level3';
             </div>
           </div>
 
+          <div class="bg-card border border-border rounded-xl p-5">
+            <h3 class="font-syne text-sm font-bold mb-4 text-slate-300 uppercase tracking-wider">Category Score Comparison</h3>
+            <div class="h-[280px]"><canvas #barCanvas></canvas></div>
+          </div>
         </div>
 
         <div *ngIf="activeTab() === 'subcriteria'">
@@ -206,7 +212,9 @@ type CompareTab = 'overview' | 'subcriteria' | 'level3';
     </div>
   `,
 })
-export class CompareComponent implements OnInit {
+export class CompareComponent implements OnInit, AfterViewInit {
+  @ViewChild('barCanvas') barCanvas!: ElementRef<HTMLCanvasElement>;
+
   private compareService = inject(CompareService);
   private api            = inject(CompanyApiService);
 
@@ -214,6 +222,7 @@ export class CompareComponent implements OnInit {
   activeTab    = signal<CompareTab>('overview');
   showAddDropdown = signal(false);
   categoryNames = ['Governance', 'People', 'Planet'];
+  private barChart: any;
   private allAvailable = signal<CompanyListItem[]>([]);
 
   tabs = [
@@ -238,6 +247,40 @@ export class CompareComponent implements OnInit {
   private async loadAvailable(): Promise<void> {
     const items = await firstValueFrom(this.api.searchCompanies({}));
     this.allAvailable.set(items);
+  }
+
+  ngAfterViewInit(): void {
+    if (this.selected().length >= 2) setTimeout(() => this.buildBarChart(), 200);
+  }
+
+  buildBarChart(): void {
+    if (typeof Chart === 'undefined' || !this.barCanvas) return;
+    if (this.barChart) this.barChart.destroy();
+    const companies = this.selected();
+    const ctx = this.barCanvas.nativeElement.getContext('2d')!;
+    const colors = ['#3B72F6', '#0EA472', '#F59E0B', '#8B5CF6'];
+    this.barChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: this.categoryNames,
+        datasets: companies.map((c, i) => ({
+          label: c.company_name,
+          data: this.categoryNames.map(cat => this.getCatScore(c, cat) ?? 0),
+          backgroundColor: colors[i] + '80',
+          borderColor: colors[i],
+          borderWidth: 1.5,
+          borderRadius: 6,
+        })),
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        scales: {
+          x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#7B91B0', font: { family: 'DM Sans' } } },
+          y: { min: 0, max: 100, grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#7B91B0', font: { family: 'JetBrains Mono', size: 10 } } },
+        },
+        plugins: { legend: { labels: { color: '#E2E8F0', font: { family: 'DM Sans', size: 12 } } } },
+      },
+    });
   }
 
   remove(id: string): void { this.compareService.remove(id); }

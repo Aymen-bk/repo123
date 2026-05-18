@@ -9,9 +9,27 @@ export const routes: Routes = [
       import('./features/auth/auth.component').then(m => m.AuthComponent),
   },
   {
+    // Google OAuth callback — backend redirects here with ?token=<jwt>
+    path: 'auth/callback',
+    loadComponent: () =>
+      import('./features/auth/auth-callback.component').then(m => m.AuthCallbackComponent),
+  },
+  {
+    path: 'insights',
+    loadComponent: () =>
+      import('./features/insights/insights.component').then(m => m.InsightsComponent),
+    canActivate: [AuthGuard],
+  },
+  {
     path: 'import',
     loadComponent: () =>
       import('./features/import/import.component').then(m => m.ImportComponent),
+    canActivate: [AuthGuard],
+  },
+  {
+    path: 'import/manual',
+    loadComponent: () =>
+      import('./features/import/manual-entry.component').then(m => m.ManualEntryComponent),
     canActivate: [AuthGuard],
   },
   {
